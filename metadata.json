@@ -1,0 +1,7 @@
+{
+  "name": "JARVIS TS",
+  "description": "JARVIS TS - Advanced Voice Interface",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

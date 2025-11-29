@@ -1,0 +1,403 @@
+/* --- GLOBAL STYLES & ANIMATIONS --- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-glow: 0 0 15px rgba(6, 182, 212, 0.3);
+}
+
+/* --- GLITCH / 3D PUSH BUTTON (GlitchButton.tsx) --- */
+.pushable-button {
+  position: relative;
+  background: transparent;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: filter 250ms;
+  -webkit-tap-highlight-color: transparent;
+  /* Dynamic Variables set in Component */
+  --hue: 217;
+  --sat: 33%;
+  --front-l: 17%;
+  --edge-l1: 16%;
+  --edge-l2: 32%;
+  --text-color: white;
+  --active-color: #22d3ee;
+}
+
+.pushable-button .shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  will-change: transform;
+  transform: translateY(2px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.pushable-button .edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: linear-gradient(
+    to left,
+    hsl(var(--hue), var(--sat), var(--edge-l1)) 0%,
+    hsl(var(--hue), var(--sat), var(--edge-l2)) 8%,
+    hsl(var(--hue), var(--sat), var(--edge-l2)) 92%,
+    hsl(var(--hue), var(--sat), var(--edge-l1)) 100%
+  );
+}
+
+.pushable-button .front {
+  display: block;
+  position: relative;
+  border-radius: 8px;
+  font-family: "Share Tech Mono", monospace;
+  color: var(--text-color);
+  background: hsl(var(--hue), var(--sat), var(--front-l));
+  will-change: transform;
+  transform: translateY(-4px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1), box-shadow 0.3s, border 0.3s;
+  white-space: nowrap;
+  user-select: none;
+  /* Size controlled by prop style in component usually, default here */
+  padding: 12px 28px; 
+}
+
+/* Hover States */
+.pushable-button:hover {
+  filter: brightness(110%);
+}
+
+.pushable-button:hover .shadow {
+  transform: translateY(4px);
+  transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.pushable-button:hover .front {
+  transform: translateY(-6px);
+  transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+/* Active / Pressed States */
+.pushable-button:active .shadow {
+  transform: translateY(1px);
+  transition: transform 34ms;
+}
+
+.pushable-button:active .front {
+  transform: translateY(-2px);
+  transition: transform 34ms;
+}
+
+/* Selected State (for toggles) */
+.pushable-button.active-state .front {
+  box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.2);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  color: var(--active-color);
+}
+
+.pushable-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+
+/* --- SESSION CONTROLS (SessionControls.tsx) --- */
+.radio-input {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background-color: black;
+  padding: 4px;
+  border-radius: 10px;
+  z-index: 10;
+}
+
+.radio-input .label {
+  width: 90px;
+  height: 60px;
+  background: linear-gradient(to bottom, #333333, rgb(36, 35, 35));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  transition: all 0.1s linear;
+  border: none; 
+  border-top: 1px solid #4e4d4d;
+  background-color: #333333;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0px 17px 5px 1px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.radio-input .label:active {
+  box-shadow: 0px 17px 5px 1px rgba(0, 0, 0, 0);
+  background: linear-gradient(to bottom, #1d1d1d, #1d1d1d);
+  border-top: none;
+  transform: translateY(2px);
+}
+
+.radio-input .label:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.radio-input .label:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.radio-input .label::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 103%;
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(to bottom, transparent 10%, transparent, transparent 90%);
+  transition: all 0.1s linear;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.radio-input .label:active::before {
+  background: linear-gradient(to bottom, transparent 10%, #cae2fd63, transparent 90%);
+}
+
+.radio-input .label .text {
+  color: black;
+  font-size: 15px;
+  line-height: 12px;
+  padding: 0px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: all 0.1s linear;
+  text-shadow: -1px -1px 1px rgb(224, 224, 224, 0.1), 0px 2px 3px rgb(0, 0, 0, 0.3);
+}
+
+.radio-input .label:active .text {
+  color: rgb(202, 226, 253);
+  text-shadow: 0px 0px 12px #cae2fd;
+}
+
+
+/* --- HOLO TOGGLE (HoloToggle.tsx) --- */
+.toggle-container {
+  position: relative;
+  width: 120px;
+  height: 40px;
+  scale: 1;
+}
+
+.toggle-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.toggle-input {
+  display: none;
+}
+
+.toggle-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 30px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-input:checked + .toggle-track {
+  border-color: rgba(6, 182, 212, 0.8);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+.track-lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.track-line {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+  transform: translateY(-50%);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 1px solid #06b6d4;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-input:checked + .toggle-track .toggle-thumb {
+  left: calc(100% - 35px);
+  border-color: #22d3ee;
+  box-shadow: 0 0 15px #22d3ee;
+}
+
+.thumb-core {
+  width: 14px;
+  height: 14px;
+  background: #06b6d4;
+  border-radius: 50%;
+  box-shadow: inset 0 0 5px rgba(255,255,255,0.5);
+  transition: all 0.3s;
+}
+
+.toggle-input:checked + .toggle-track .thumb-core {
+  background: #22d3ee;
+  box-shadow: 0 0 10px #22d3ee, inset 0 0 5px white;
+}
+
+.thumb-scan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(34, 211, 238, 0.8);
+  animation: scan 2s linear infinite;
+  opacity: 0;
+}
+
+.toggle-input:checked + .toggle-track .thumb-scan {
+  opacity: 1;
+}
+
+@keyframes scan {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.thumb-inner {
+  position: absolute;
+  inset: -3px;
+  border: 1px dashed rgba(6, 182, 212, 0.4);
+  border-radius: 50%;
+  animation: spin 10s linear infinite reverse;
+}
+
+.energy-ring {
+  position: absolute;
+  inset: -6px;
+  border: 1px dotted rgba(6, 182, 212, 0);
+  border-top-color: #22d3ee;
+  border-bottom-color: #22d3ee;
+  border-radius: 50%;
+  animation: spin 3s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.toggle-input:checked + .toggle-track .toggle-thumb .energy-ring {
+  opacity: 1;
+  border-color: rgba(34, 211, 238, 0.5);
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.toggle-data {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  padding: 0 15px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.data-text {
+  transition: all 0.3s;
+  opacity: 0.3;
+  color: #475569;
+}
+
+.toggle-input:not(:checked) + .toggle-track .data-text.off {
+  opacity: 1;
+  color: #94a3b8;
+  text-shadow: 0 0 5px rgba(148, 163, 184, 0.5);
+  padding-left: 20px; 
+}
+
+.toggle-input:checked + .toggle-track .data-text.on {
+  opacity: 1;
+  color: #22d3ee;
+  text-shadow: 0 0 8px #22d3ee;
+  padding-right: 20px;
+}
+
+.interface-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.interface-line {
+  position: absolute;
+  background: rgba(6, 182, 212, 0.2);
+}
+.interface-line:nth-child(1) { top: 5px; left: 10px; width: 2px; height: 5px; }
+.interface-line:nth-child(2) { bottom: 5px; right: 10px; width: 2px; height: 5px; }
+.interface-line:nth-child(3) { top: 10px; left: 50%; width: 1px; height: 20px; opacity: 0.1; }
+
+.holo-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.1) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.toggle-input:checked + .toggle-track .holo-glow {
+  opacity: 1;
+}
