@@ -3,5 +3,6 @@
   "description": "JARVIS TS - Advanced Voice Interface",
   "requestFramePermissions": [
     "microphone"
-  ]
+  ],
+  "majorCapabilities": []
 }

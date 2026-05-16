@@ -7,6 +7,8 @@ export const useJarvis = () => {
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  // Ref to hold analyser to avoid closure staleness in audio callbacks
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
 
   // Audio Contexts
@@ -94,13 +96,23 @@ export const useJarvis = () => {
           await outCtx.resume();
       }
 
-      // Re-attach analyser if needed
-      if (!analyser) {
-          const analyserNode = outCtx.createAnalyser();
-          analyserNode.fftSize = 512;
-          analyserNode.smoothingTimeConstant = 0.8;
-          analyserNode.connect(outCtx.destination);
-          setAnalyser(analyserNode);
+      // Safe Analyser Access using Ref to prevent context mismatch
+      let currentAnalyser = analyserRef.current;
+
+      // If no analyser or context mismatch (the cause of the error), recreate it
+      if (!currentAnalyser || currentAnalyser.context !== outCtx) {
+          try {
+            currentAnalyser = outCtx.createAnalyser();
+            currentAnalyser.fftSize = 512;
+            currentAnalyser.smoothingTimeConstant = 0.8;
+            currentAnalyser.connect(outCtx.destination);
+            
+            analyserRef.current = currentAnalyser;
+            setAnalyser(currentAnalyser);
+          } catch (e) {
+             console.warn("Could not create analyser", e);
+             currentAnalyser = null;
+          }
       }
 
       // Ensure time is moving forward
@@ -120,8 +132,8 @@ export const useJarvis = () => {
         source.buffer = audioBuffer;
         
         // Connect to analyser if it exists, otherwise destination
-        if (analyser) {
-             source.connect(analyser);
+        if (currentAnalyser) {
+             source.connect(currentAnalyser);
         } else {
              source.connect(outCtx.destination);
         }
@@ -136,7 +148,7 @@ export const useJarvis = () => {
       } catch (e) {
           console.error("Audio playback error", e);
       }
-  }, [analyser]);
+  }, []); // Removed [analyser] dependency to keep function stable
 
   const getSystemInstruction = (language: 'english' | 'hindi') => {
       const langName = language === 'hindi' ? 'Hindi' : 'English';
@@ -153,10 +165,6 @@ export const useJarvis = () => {
       setConnectionState(ConnectionState.CONNECTING);
       addLog('system', `Initializing JARVIS TS core protocols (${language.toUpperCase()})...`);
 
-      if (!process.env.API_KEY) {
-        throw new Error("API_KEY not found in environment.");
-      }
-
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       // Setup Audio Contexts IMMEDIATELY on click/connect
@@ -169,6 +177,9 @@ export const useJarvis = () => {
       inputAudioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
       outputAudioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
 
+      // Reset timing
+      nextStartTimeRef.current = 0;
+
       // FORCE RESUME to unlock audio autoplay
       await outputAudioContextRef.current.resume();
 
@@ -178,6 +189,9 @@ export const useJarvis = () => {
       analyserNode.fftSize = 512;
       analyserNode.smoothingTimeConstant = 0.8;
       analyserNode.connect(outCtx.destination);
+      
+      // Set both ref and state
+      analyserRef.current = analyserNode;
       setAnalyser(analyserNode);
 
       // Microphone Stream
@@ -197,7 +211,7 @@ export const useJarvis = () => {
       };
 
       const sessionPromise = ai.live.connect({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-3.1-flash-live-preview',
         config,
         callbacks: {
           onopen: () => {
@@ -219,7 +233,9 @@ export const useJarvis = () => {
               
               if (sessionPromiseRef.current) {
                 sessionPromiseRef.current.then((session: any) => {
-                  session.sendRealtimeInput({ media: pcmBlob });
+                  session.sendRealtimeInput({ audio: pcmBlob });
+                }).catch((err: any) => {
+                    // Swallow network errors that happen during disconnects/instability
                 });
               }
             };
@@ -297,32 +313,29 @@ export const useJarvis = () => {
     if (inputAudioContextRef.current) inputAudioContextRef.current.close();
     if (outputAudioContextRef.current) outputAudioContextRef.current.close();
 
+    // Reset references
+    analyserRef.current = null;
+    setAnalyser(null);
+
     setConnectionState(ConnectionState.DISCONNECTED);
     addLog('system', 'JARVIS TS Deactivated.');
     sessionPromiseRef.current = null;
   }, [addLog]);
 
   const changeLanguage = useCallback((language: 'english' | 'hindi') => {
-      // If active, we can inform the model via text injection to switch context
+      // Since session.send() is not available for this type of control message in the current SDK/API version,
+      // we perform a full reconnect to update the System Instruction with the new language preference.
       if (sessionPromiseRef.current) {
-          sessionPromiseRef.current.then((session: any) => {
-              // We send a client content message telling the model to switch language
-              // Note: Live API doesn't have a direct 'system instruction update' method mid-stream, 
-              // but telling it as a user turn works effectively.
-              const langName = language === 'hindi' ? 'Hindi' : 'English';
-              session.send({ 
-                  clientContent: { 
-                      turns: [{ 
-                          role: 'user', 
-                          parts: [{ text: `System Override: Switch output language to ${langName}. Respond in ${langName} from now on.` }] 
-                      }], 
-                      turnComplete: true 
-                  } 
-              });
-              addLog('system', `Language protocol switched to ${langName.toUpperCase()}`);
-          });
+          addLog('system', `Re-calibrating language protocols for ${language.toUpperCase()}...`);
+          
+          disconnect();
+          
+          // Slight delay to ensure clean teardown before reconnecting
+          setTimeout(() => {
+              connect(language);
+          }, 500);
       }
-  }, [addLog]);
+  }, [addLog, disconnect, connect]);
 
   const sendTextMessage = useCallback(async (text: string, language: 'english' | 'hindi') => {
     // 1. Log the user message
@@ -342,7 +355,7 @@ export const useJarvis = () => {
         const userContent = { role: 'user', parts: [{ text: text }] };
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             config: {
                 systemInstruction: systemInstruction,
             },
@@ -360,7 +373,7 @@ export const useJarvis = () => {
         // --- Step 2: Generate Audio (TTS) ---
         // Use the TTS model to speak the response
         const ttsResponse = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
+            model: "gemini-3.1-flash-tts-preview",
             contents: [{ parts: [{ text: responseText }] }],
             config: {
                 responseModalities: [Modality.AUDIO],

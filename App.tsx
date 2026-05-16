@@ -10,13 +10,15 @@ import HoloToggle from './components/HoloToggle';
 import GlitchButton from './components/GlitchButton';
 import SessionControls from './components/SessionControls';
 import TextInput from './components/TextInput';
-import { Mic, MicOff, Power, Radio, ShieldCheck, Activity, BrainCircuit, Keyboard, Languages } from 'lucide-react';
+import AboutModal from './components/AboutModal';
+import { Mic, MicOff, Power, Radio, ShieldCheck, Activity, BrainCircuit, Keyboard, Languages, Info } from 'lucide-react';
 
 const App: React.FC = () => {
   const { connectionState, connect, disconnect, clearLogs, sendTextMessage, changeLanguage, logs, analyser, setMicMuted } = useJarvis();
   const [isLightMode, setIsLightMode] = useState(false);
   const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
   const [language, setLanguage] = useState<'english' | 'hindi'>('english');
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const isActive = connectionState === ConnectionState.CONNECTED;
   const isConnecting = connectionState === ConnectionState.CONNECTING;
@@ -56,6 +58,9 @@ const App: React.FC = () => {
       {/* Overlay Gradients */}
       <div className={`absolute inset-0 bg-radial-glow pointer-events-none z-0 transition-opacity duration-1000 ${isLightMode ? 'opacity-30' : 'opacity-100'}`}></div>
       
+      {/* About Modal */}
+      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} isLightMode={isLightMode} />
+
       {/* Header */}
       <header className={`relative z-10 p-5 flex flex-col md:flex-row gap-4 justify-between items-center border-b transition-colors duration-300 backdrop-blur-md ${isLightMode ? 'border-slate-200 bg-white/70' : 'border-cyan-900/30 bg-slate-950/80'}`}>
         <div className="flex items-center gap-4">
@@ -79,165 +84,140 @@ const App: React.FC = () => {
                 <HoloToggle checked={isLightMode} onChange={setIsLightMode} />
             </div>
 
-            <div className="hidden md:flex flex-col items-end">
-                <span className={`text-[10px] font-mono ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>SYSTEM INTEGRITY</span>
-                <div className="flex gap-1 mt-1">
-                    {[1,2,3,4,5].map(i => <div key={i} className={`w-4 h-1 transition-opacity duration-500 ${isLightMode ? 'bg-cyan-600/50' : 'bg-cyan-500/50'} ${isLightMode ? 'opacity-100' : 'opacity-100'}`}></div>)}
-                </div>
-            </div>
-            <div className={`flex items-center gap-3 px-4 py-2 rounded-full border backdrop-blur-sm transition-all duration-500 ${
-                isActive 
-                    ? isLightMode 
-                        ? 'border-cyan-500 bg-white shadow-md' 
-                        : 'border-cyan-400 bg-cyan-950/40 shadow-[0_0_15px_rgba(6,182,212,0.3)]' 
-                    : isLightMode
-                        ? 'border-slate-300 bg-slate-100'
-                        : 'border-slate-800 bg-slate-900/50'
-            }`}>
-                <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-cyan-400 animate-ping' : 'bg-slate-500'}`}></div>
-                <span className={`text-xs font-mono font-bold tracking-wider ${isActive ? (isLightMode ? 'text-cyan-700' : 'text-cyan-300') : 'text-slate-400'}`}>
-                    {isActive ? 'ONLINE' : 'OFFLINE'}
-                </span>
-            </div>
+            {/* About Button */}
+            <button 
+                onClick={() => setIsAboutOpen(true)}
+                className={`p-2 rounded-full border transition-all duration-300 hover:scale-110 ${isLightMode ? 'border-slate-300 text-slate-500 hover:bg-slate-100' : 'border-cyan-900/50 text-cyan-500 hover:bg-cyan-950/50 hover:shadow-[0_0_10px_cyan]'}`}
+                title="System Info"
+            >
+                <Info size={20} />
+            </button>
         </div>
       </header>
 
-      {/* Main Content Grid */}
-      <main className="flex-1 relative z-10 p-4 lg:p-8 flex flex-col lg:flex-row gap-8 items-center lg:items-stretch justify-center max-w-[1600px] mx-auto w-full">
+      {/* Main Interface */}
+      <main className="relative z-10 flex-1 flex flex-col lg:flex-row items-center lg:items-stretch justify-center p-4 gap-6 overflow-hidden">
         
-        {/* Left Column: Chat Log (Primary Interaction) */}
-        <div className="w-full lg:w-1/4 h-full order-2 lg:order-1 flex flex-col gap-6 animate-[fadeIn_0.5s_ease-out_0.2s]">
-             <ChatLog logs={logs} isLightMode={isLightMode} />
-             <div className={`p-4 rounded border text-center transition-colors hidden lg:block ${isLightMode ? 'bg-white border-cyan-200 shadow-sm' : 'bg-cyan-950/20 border-cyan-900/30'}`}>
-                 <p className={`text-[10px] font-mono mb-1 ${isLightMode ? 'text-slate-400' : 'text-cyan-500'}`}>CURRENT MODEL</p>
-                 <p className={`text-xs font-bold tracking-widest ${isLightMode ? 'text-cyan-700' : 'text-cyan-300'}`}>GEMINI 2.5 FLASH AUDIO</p>
-            </div>
-        </div>
-
-        {/* Center: The Core */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center justify-center min-h-[500px] order-1 lg:order-2 relative">
-             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                 {/* Background HUD Rings */}
-                <div className={`w-[600px] h-[600px] border rounded-full absolute transition-all duration-1000 ${isActive ? 'scale-110 opacity-60' : 'scale-100 opacity-30'} ${isLightMode ? 'border-slate-300' : 'border-cyan-800/20'}`}></div>
-                <div className={`w-[800px] h-[800px] border rounded-full absolute transition-all duration-[2000ms] ${isActive ? 'scale-105' : 'scale-100'} ${isLightMode ? 'border-slate-200' : 'border-cyan-800/10'}`}></div>
-             </div>
-             
-             {/* Input Mode & Language Toggles */}
-             <div className="relative z-20 flex flex-col gap-4 mb-6 items-center">
-                 {/* Modes */}
-                 <div className="flex gap-6 items-center">
-                    <div className="flex items-center gap-2">
-                        <Mic size={16} className={inputMode === 'voice' ? 'text-cyan-400' : 'text-slate-500'} />
-                        <GlitchButton 
-                            text="VOICE"
-                            isLightMode={isLightMode} 
-                            isActive={inputMode === 'voice'} 
-                            onClick={() => setInputMode('voice')}
-                            size="sm"
-                        />
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                        <Keyboard size={16} className={inputMode === 'text' ? 'text-cyan-400' : 'text-slate-500'} />
-                        <GlitchButton 
-                            text="TEXT"
-                            isLightMode={isLightMode} 
-                            isActive={inputMode === 'text'} 
-                            onClick={() => setInputMode('text')}
-                            size="sm"
-                        />
-                    </div>
-                 </div>
-
-                 {/* Language Selection */}
-                 <div className="flex items-center gap-4 border-t pt-4 border-dashed border-cyan-500/20">
-                    <Languages size={14} className={isLightMode ? 'text-slate-400' : 'text-cyan-700'} />
-                    <div className="flex gap-2">
-                        <GlitchButton 
-                            text="ENG"
-                            isLightMode={isLightMode} 
-                            isActive={language === 'english'} 
-                            onClick={() => handleLanguageChange('english')}
-                            size="sm"
-                        />
-                        <GlitchButton 
-                            text="HIN"
-                            isLightMode={isLightMode} 
-                            isActive={language === 'hindi'} 
-                            onClick={() => handleLanguageChange('hindi')}
-                            size="sm"
-                        />
-                    </div>
-                 </div>
-             </div>
-             
-             {/* The Reactor Component - Increased margin-bottom to 24 (96px) to fix overlap */}
-             <div className="relative z-10 w-full h-[320px] flex items-center justify-center mb-24">
-                <ArcReactor analyser={analyser} active={isActive} isLightMode={isLightMode} />
-             </div>
-
-             {/* Connection Controls Area */}
-             <div className="relative z-20 w-full flex flex-col items-center gap-4 min-h-[80px]">
-                {isActive ? (
-                    inputMode === 'voice' ? (
-                        <div className="flex flex-col items-center gap-4">
-                            <SessionControls onStop={disconnect} onReset={clearLogs} />
-                            <p className={`text-[10px] tracking-widest animate-pulse ${isLightMode ? 'text-cyan-600' : 'text-cyan-400'}`}>
-                                LISTENING ({language.toUpperCase()})...
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center gap-4 w-full px-8">
-                            <TextInput 
-                                onSend={handleTextSend} 
-                                isLightMode={isLightMode} 
-                                disabled={!isActive} 
-                            />
-                            <div className="scale-75 origin-top">
-                                 <SessionControls onStop={disconnect} onReset={clearLogs} />
-                            </div>
-                        </div>
-                    )
-                ) : (
-                  <GlitchButton 
-                      text={isConnecting ? 'CONNECTING...' : 'INITIALIZE SYSTEM'}
-                      onClick={toggleConnection}
-                      isLightMode={isLightMode}
-                      variant='default'
-                      size="lg"
-                  />
-                )}
-             </div>
-        </div>
-
-        {/* Right Column: Stats & Diagnostics (Secondary) */}
-        <div className="w-full lg:w-1/4 flex flex-col gap-6 order-3 lg:order-3 animate-[fadeIn_0.5s_ease-out]">
+        {/* Left Panel: System Stats & Status */}
+        <aside className="w-full lg:w-72 flex flex-col gap-4 transition-all duration-500 order-2 lg:order-1">
             <SystemStats isLightMode={isLightMode} />
-            <InfoPanel title="Operational Status" side="right" isLightMode={isLightMode}>
-                <ul className={`space-y-3 text-sm font-mono ${isLightMode ? 'text-slate-600' : 'text-cyan-300'}`}>
-                    <li className={`flex items-center justify-between p-2 rounded border ${isLightMode ? 'bg-slate-100 border-slate-200' : 'bg-cyan-950/20 border-cyan-900/30'}`}>
-                        <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-cyan-500"/> Firewall</span>
-                        <span className="text-green-500 text-xs">ACTIVE</span>
-                    </li>
-                    <li className={`flex items-center justify-between p-2 rounded border ${isLightMode ? 'bg-slate-100 border-slate-200' : 'bg-cyan-950/20 border-cyan-900/30'}`}>
-                        <span className="flex items-center gap-2"><Activity size={14} className="text-cyan-500"/> Neural Link</span>
-                        <span className={`text-xs ${isLightMode ? 'text-cyan-600' : 'text-cyan-400'}`}>{isActive ? 'CONNECTED' : 'STANDBY'}</span>
-                    </li>
-                    <li className={`flex items-center justify-between p-2 rounded border ${isLightMode ? 'bg-slate-100 border-slate-200' : 'bg-cyan-950/20 border-cyan-900/30'}`}>
-                        <span className="flex items-center gap-2"><Languages size={14} className="text-cyan-500"/> Language</span>
-                        <span className="text-xs uppercase font-bold text-cyan-500">{language.substring(0,3)}</span>
-                    </li>
-                </ul>
+            
+            <InfoPanel title="Protocol Status" isLightMode={isLightMode}>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                        <span className={`text-xs ${isLightMode ? 'text-slate-500' : 'text-cyan-400/70'}`}>CONNECTION</span>
+                        <div className={`flex items-center gap-2 text-xs font-bold ${
+                            isActive ? 'text-green-500' : 
+                            isConnecting ? 'text-yellow-500' : 'text-red-500'
+                        }`}>
+                            <div className={`w-2 h-2 rounded-full ${
+                                isActive ? 'bg-green-500 animate-pulse' : 
+                                isConnecting ? 'bg-yellow-500 animate-bounce' : 'bg-red-500'
+                            }`}></div>
+                            {connectionState}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                        <span className={`text-xs ${isLightMode ? 'text-slate-500' : 'text-cyan-400/70'}`}>SECURE LINK</span>
+                         <ShieldCheck size={14} className={isActive ? "text-green-500" : "text-gray-500"} />
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                        <span className={`text-xs ${isLightMode ? 'text-slate-500' : 'text-cyan-400/70'}`}>AUDIO STREAM</span>
+                        <Activity size={14} className={isActive && !inputMode ? "text-cyan-400 animate-pulse" : "text-gray-500"} />
+                    </div>
+                </div>
             </InfoPanel>
-        </div>
+        </aside>
+
+        {/* Center Panel: Arc Reactor */}
+        <section className="flex-1 w-full relative flex items-center justify-center min-h-[300px] lg:min-h-0 order-1 lg:order-2">
+            <ArcReactor analyser={analyser} active={isActive} isLightMode={isLightMode} />
+        </section>
+
+        {/* Right Panel: Chat Log */}
+        <aside className="w-full lg:w-96 h-[300px] lg:h-auto flex flex-col order-3 transition-all duration-500">
+             <ChatLog logs={logs} isLightMode={isLightMode} />
+        </aside>
 
       </main>
 
-      {/* Footer */}
-      <footer className={`relative z-10 p-3 text-center border-t backdrop-blur ${isLightMode ? 'bg-white/80 border-slate-200' : 'bg-slate-950/90 border-cyan-900/30'}`}>
-        <p className={`text-[10px] font-mono tracking-[0.3em] ${isLightMode ? 'text-slate-400' : 'text-cyan-700'}`}>
-          JARVIS TS SYSTEMS • SECURE CONNECTION • V.2.1.0
-        </p>
+      {/* Footer Controls */}
+      <footer className={`relative z-20 p-4 border-t backdrop-blur-md transition-colors duration-300 ${isLightMode ? 'border-slate-200 bg-white/70' : 'border-cyan-900/30 bg-slate-950/80'}`}>
+        <div className="max-w-4xl mx-auto flex flex-col gap-4">
+            
+            {/* Top Row: Primary Controls */}
+            <div className="flex flex-wrap justify-center items-center gap-6">
+                
+                {/* Connect Button */}
+                <div className="relative group">
+                    <div className={`absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 ${isActive ? 'animate-pulse' : ''}`}></div>
+                    <GlitchButton 
+                        text={isActive ? "DEACTIVATE SYSTEM" : isConnecting ? "INITIALIZING..." : "INITIALIZE JARVIS"} 
+                        onClick={toggleConnection}
+                        isLightMode={isLightMode}
+                        isActive={isActive}
+                        variant={isActive ? 'danger' : 'default'}
+                    />
+                </div>
+
+                {/* Controls Group */}
+                <div className="flex items-center gap-4 bg-black/10 p-2 rounded-lg border border-cyan-900/10">
+                    
+                    {/* Input Mode Toggle */}
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => setInputMode('voice')}
+                            className={`p-2 rounded transition-all ${inputMode === 'voice' 
+                                ? (isLightMode ? 'bg-cyan-100 text-cyan-700 shadow-sm' : 'bg-cyan-900/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]') 
+                                : 'text-gray-500 hover:text-gray-400'}`}
+                            title="Voice Mode"
+                        >
+                            <Mic size={20} />
+                        </button>
+                        <button 
+                            onClick={() => setInputMode('text')}
+                            className={`p-2 rounded transition-all ${inputMode === 'text' 
+                                ? (isLightMode ? 'bg-cyan-100 text-cyan-700 shadow-sm' : 'bg-cyan-900/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]') 
+                                : 'text-gray-500 hover:text-gray-400'}`}
+                            title="Text Mode"
+                        >
+                            <Keyboard size={20} />
+                        </button>
+                    </div>
+
+                    <div className={`w-[1px] h-6 ${isLightMode ? 'bg-slate-300' : 'bg-cyan-900/50'}`}></div>
+
+                    {/* Language Toggle */}
+                    <div className="flex items-center gap-2">
+                        <Languages size={18} className={isLightMode ? "text-slate-400" : "text-cyan-700"} />
+                        <button 
+                            onClick={() => handleLanguageChange('english')}
+                            className={`text-xs font-mono font-bold px-2 py-1 rounded transition-colors ${language === 'english' 
+                                ? (isLightMode ? 'text-cyan-700 bg-cyan-50' : 'text-cyan-300 bg-cyan-900/30') 
+                                : 'text-gray-500 hover:text-gray-400'}`}
+                        >
+                            ENG
+                        </button>
+                        <button 
+                            onClick={() => handleLanguageChange('hindi')}
+                            className={`text-xs font-mono font-bold px-2 py-1 rounded transition-colors ${language === 'hindi' 
+                                ? (isLightMode ? 'text-cyan-700 bg-cyan-50' : 'text-cyan-300 bg-cyan-900/30') 
+                                : 'text-gray-500 hover:text-gray-400'}`}
+                        >
+                            HIN
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Row: Text Input (Conditional) */}
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden flex justify-center ${inputMode === 'text' ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <TextInput onSend={handleTextSend} isLightMode={isLightMode} disabled={!isActive} />
+            </div>
+
+        </div>
       </footer>
     </div>
   );
