@@ -42,6 +42,4 @@ You will need a Gemini API Key to run this application. You can get one from [Go
 - [Google Gen AI SDK](https://www.npmjs.com/package/@google/genai)
 - [Lucide Icons](https://lucide.dev/)
 
-## Exporting for GitHub
 
-To push these updates to your GitHub repository, use the **Settings menu** in the top right corner of AI Studio, select **Export**, and then choose **Export to GitHub**. This will allow you to commit and push the latest changes, including this README, to your connected repository.
